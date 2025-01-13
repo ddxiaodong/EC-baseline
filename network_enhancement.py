@@ -74,6 +74,13 @@ def network_enhancement(W_in, order=2, K=None, alpha=0.9):
 def network_diffusion(W, diffusion_type='ave'):
     """
     网络扩散
+    
+    参数:
+        W: np.ndarray, 输入矩阵
+        diffusion_type: str, 扩散类型,'ave'或'gph'
+        
+    返回:
+        W_normalized: np.ndarray, 扩散后的矩阵
     """
     W = W * len(W)
     D = np.sum(np.abs(W), axis=1) + np.finfo(float).eps
@@ -92,6 +99,13 @@ def network_diffusion(W, diffusion_type='ave'):
 def dominate_set(aff_matrix, k):
     """
     计算主导集
+    
+    参数:
+        aff_matrix: np.ndarray, 亲和度矩阵
+        k: int, 每个节点保留的最大边数
+        
+    返回:
+        np.ndarray: 主导集矩阵
     """
     n = len(aff_matrix)
     # 对每行排序并取前k个最大值
@@ -112,6 +126,12 @@ def dominate_set(aff_matrix, k):
 def transition_fields(W):
     """
     转换为转移矩阵
+    
+    参数:
+        W: np.ndarray, 输入矩阵
+        
+    返回:
+        np.ndarray: 转移矩阵
     """
     zeroindex = np.where(np.sum(W, axis=1) == 0)[0]
     W = W * len(W)

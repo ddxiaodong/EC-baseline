@@ -27,7 +27,7 @@ def network_deconvolution(W_in, beta=0.99, alpha=1.0, control=0):
     W_th = (W_th + W_th.T) / 2
     
     # 特征分解
-    eigenvalues, eigenvectors = eigh(W_th)
+    eigenvalues, eigenvectors = eigh(W_th) # 使用eigh而不是eig,因为矩阵是对称的
     
     # 计算缩放因子
     lam_n = abs(min(min(eigenvalues), 0))
@@ -37,7 +37,7 @@ def network_deconvolution(W_in, beta=0.99, alpha=1.0, control=0):
     m = max(m1, m2)
     
     # 网络解卷积
-    d = eigenvalues / (m + eigenvalues)
+    d = eigenvalues / (m + eigenvalues + 1e-10) # 添加eps避免除零
     W_new = eigenvectors @ np.diag(d) @ eigenvectors.T
     
     # 处理直接权重
@@ -52,14 +52,14 @@ def network_deconvolution(W_in, beta=0.99, alpha=1.0, control=0):
         W_new = W_new + max(-m2, 0)
     
     # 归一化
-    W_out = (W_new - np.min(W_new)) / (np.max(W_new) - np.min(W_new))
+    W_out = (W_new - np.min(W_new)) / (np.max(W_new) - np.min(W_new) + 1e-10) # 添加eps避免除零
     
     return W_out
 
 def network_deconvolution_regulatory(W_in, beta=0.5, alpha=0.1, control_p=0):
     """
     网络解卷积算法的Python实现（基因调控网络版本）
-    
+    矩阵表示转录因子对其他基因的调控关系
     参数:
         W_in: np.ndarray, 输入矩阵 (n_tf x n)，其中前n_tf个基因是转录因子
         beta: float, 缩放参数，范围(0,1)
@@ -126,6 +126,7 @@ def network_deconvolution_regulatory(W_in, beta=0.5, alpha=0.1, control_p=0):
     
     # 如果矩阵不可对角化，添加随机扰动
     if control_p == 1:
+        np.random.seed(42) # 添加随机种子以保证结果可复现
         r_p = 0.001
         rand_tf = r_p * np.random.rand(n_tf, n_tf)
         rand_tf = (rand_tf + rand_tf.T) / 2
@@ -149,7 +150,7 @@ def network_deconvolution_regulatory(W_in, beta=0.5, alpha=0.1, control_p=0):
     scale_eigen = max(m1, m2)
     
     # 应用网络解卷积滤波器
-    D = np.diag(eigenvalues / (scale_eigen + eigenvalues))
+    D = np.diag(eigenvalues / (scale_eigen + eigenvalues + 1e-10)) # 添加eps避免除零
     
     # 重构网络
     net_new = eigenvectors @ D @ np.linalg.inv(eigenvectors)

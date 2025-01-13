@@ -12,7 +12,7 @@ def partial(mat):
         np.ndarray: 标准化后的矩阵
     """
     diag = np.diag(mat)
-    diag_inv = np.diag(1.0 / diag) 
+    diag_inv = np.diag(1.0 / diag) # 这里可能会有除零问题,建议加入eps
     mat_new = -diag_inv @ mat @ diag_inv
     np.fill_diagonal(mat_new, 1)
     return mat_new
@@ -31,19 +31,19 @@ def network_rendor(W_in, m=2, eps1=1, eps2=1):
     """
     W = np.array(W_in)
     n = len(W)
-    W = W + W.T
+    W = W + W.T # 确保对称性
     
     W = W + eps1 + eps2 * np.eye(n)
     
-    P1 = W / W.sum(axis=1)[:, np.newaxis]
+    P1 = W / (W.sum(axis=1)[:, np.newaxis] + 1e-10) # 加入eps避免除零
     
     P2 = m * np.linalg.inv((m-1) * np.eye(n) + P1) @ P1
     P2 = P2 - np.minimum(P2.min(axis=1), 0)[:, np.newaxis]
-    P2 = P2 / P2.sum(axis=1)[:, np.newaxis]
+    P2 = P2 / (P2.sum(axis=1)[:, np.newaxis] + 1e-10) # 加入eps避免除零
     
     W_out = np.diag(W.sum(axis=1)) @ P2
     
-    W_out = (W_out - W_out.min()) / (W_out.max() - W_out.min())
+    W_out = (W_out - W_out.min()) / (W_out.max() - W_out.min() + 1e-10) # 加入eps避免除零
     W_out = W_out + W_out.T
     np.fill_diagonal(W_out, 0)
     
@@ -60,14 +60,14 @@ def network_icm(W_in):
     """
     W = np.array(W_in)
     n = W.shape[0]
-    W = W + W.T
+    W = W + W.T # 确保对称性
     
-    W_new = np.linalg.pinv(W)
+    W_new = np.linalg.pinv(W) # 可能需要加入正则化避免奇异性
     W_new = W_new + 1e-18
     W_new = partial(W_new)
     W_new = np.abs(W_new)
     
-    W_new = (W_new - W_new.min()) / (W_new.max() - W_new.min())
+    W_new = (W_new - W_new.min()) / (W_new.max() - W_new.min() + 1e-10) # 加入eps避免除零
     W_new = W_new + W_new.T
     np.fill_diagonal(W_new, 0)
     
@@ -84,13 +84,13 @@ def network_silencer(W_in):
     """
     W = np.array(W_in)
     n = W.shape[0]
-    W = W + W.T
+    W = W + W.T # 确保对称性
     
     temp = np.diag(np.diag((W - np.eye(n)) @ W))
-    W_new = (W - np.eye(n) + temp) @ np.linalg.pinv(W)
+    W_new = (W - np.eye(n) + temp) @ np.linalg.pinv(W) # 可能需要加入正则化避免奇异性
     W_new = np.abs(W_new)
     
-    W_new = (W_new - W_new.min()) / (W_new.max() - W_new.min())
+    W_new = (W_new - W_new.min()) / (W_new.max() - W_new.min() + 1e-10) # 加入eps避免除零
     W_new = W_new + W_new.T
     np.fill_diagonal(W_new, 0)
     
@@ -107,7 +107,7 @@ def network_nd(W_in):
     """
     W = np.array(W_in)
     n = W.shape[0]
-    W = W + W.T
+    W = W + W.T # 确保对称性
     
     eigenvals, eigenvecs = np.linalg.eigh(W)
     D = np.diag(eigenvals)
@@ -122,9 +122,9 @@ def network_nd(W_in):
     m = max(m1, m2)
     
     D = np.diag(np.diag(D)/(m + np.diag(D)))
-    W_nd = U @ D @ np.linalg.pinv(U)
+    W_nd = U @ D @ np.linalg.pinv(U) # 可以考虑用U.T代替pinv(U)以提高效率
     
-    W_nd = (W_nd - W_nd.min()) / (W_nd.max() - W_nd.min())
+    W_nd = (W_nd - W_nd.min()) / (W_nd.max() - W_nd.min() + 1e-10) # 加入eps避免除零
     W_nd = W_nd + W_nd.T
     np.fill_diagonal(W_nd, 0)
     
