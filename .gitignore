@@ -1,0 +1,4 @@
+# 具体指定要忽略的文件/文件夹
+pubmed/
+citeseer/adj_matrix*.npy
+cora/adj_matrix*.npy
